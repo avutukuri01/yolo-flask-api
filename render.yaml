@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: yolo-flask-api
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python app.py"
+    plan: free
+    autoDeploy: true
+    
+Add Render configuration
