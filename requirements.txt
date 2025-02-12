@@ -4,5 +4,3 @@ ultralytics
 opencv-python
 numpy
 requests
-
-Add requirements.txt
