@@ -12,21 +12,23 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS
 
 # URL to download the model if not present
-MODEL_URL = 'https://drive.google.com/uc?export=download&id=11tKJ2cNOPuVX1K4eqSBujYWN0lzt_qJJ'
-MODEL_PATH = 'model/yolo11_model.pt'
-
-# Download the model if it's not already present
 def download_model():
+    MODEL_URL = 'https://drive.google.com/uc?export=download&id=11tKJ2cNOPuVX1K4eqSBujYWN0lzt_qJJ'
+    MODEL_PATH = 'model/yolo11_model.pt'
+    
     if not os.path.exists(MODEL_PATH):
-        os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
         print("Downloading YOLOv11 model...")
+        os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
 
-        with requests.get(MODEL_URL, stream=True) as response:
-            response.raise_for_status()
-            with open(MODEL_PATH, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:  # Filter out keep-alive chunks
-                        f.write(chunk)
+        # Download in chunks
+        response = requests.get(MODEL_URL, stream=True)
+        if 'html' in response.headers.get('Content-Type', ''):
+            raise ValueError("Error: The URL is returning an HTML page, not the model file.")
+
+        with open(MODEL_PATH, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
 
         print("Model downloaded successfully.")
 
