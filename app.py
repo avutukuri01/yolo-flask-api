@@ -3,14 +3,38 @@ from flask_cors import CORS
 import numpy as np
 import cv2
 import base64
+import os
+import requests
 from ultralytics import YOLO
 
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)  # Enable CORS
 
+# URL to download the model if not present
+MODEL_URL = 'https://drive.google.com/uc?export=download&id=11tKJ2cNOPuVX1K4eqSBujYWN0lzt_qJJ'
+MODEL_PATH = 'model/yolo11_model.pt'
+
+# Download the model if it's not already present
+def download_model():
+    if not os.path.exists(MODEL_PATH):
+        os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+        print("Downloading YOLOv11 model...")
+
+        with requests.get(MODEL_URL, stream=True) as response:
+            response.raise_for_status()
+            with open(MODEL_PATH, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:  # Filter out keep-alive chunks
+                        f.write(chunk)
+
+        print("Model downloaded successfully.")
+
+# Ensure the model is downloaded before loading
+download_model()
+
 # Load the YOLOv11 model
-model = YOLO('model/yolo11_model.pt')  # Replace with your actual model path
+model = YOLO(MODEL_PATH)
 
 # Preprocess image to match COCO dataset format
 def preprocess_image(image):
@@ -79,3 +103,5 @@ def predict_base64():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
+Add Flask API for YOLOv11
