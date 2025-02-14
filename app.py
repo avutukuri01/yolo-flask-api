@@ -20,8 +20,17 @@ def download_model():
         print("Downloading YOLOv11 model...")
         os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
 
-        # Download in chunks
-        response = requests.get(MODEL_URL, stream=True)
+        session = requests.Session()
+        response = session.get(MODEL_URL, stream=True)
+
+        # Check if a confirmation token is needed
+        for key, value in response.cookies.items():
+            if key.startswith('download_warning'):
+                MODEL_URL_WITH_CONFIRM = f"{MODEL_URL}&confirm={value}"
+                response = session.get(MODEL_URL_WITH_CONFIRM, stream=True)
+                break
+
+        # Check if the content is valid (not HTML)
         if 'html' in response.headers.get('Content-Type', ''):
             raise ValueError("Error: The URL is returning an HTML page, not the model file.")
 
@@ -40,7 +49,7 @@ model = YOLO(MODEL_PATH)
 
 # Preprocess image to match COCO dataset format
 def preprocess_image(image):
-    image = cv2.resize(image, (640, 640))  # Resize to YOLOv11 expected size
+    image = cv2.resize(image, (1024, 1024))  # Resize to YOLOv11 expected size
     image = image / 255.0  # Normalize to [0, 1]
     return image
 
