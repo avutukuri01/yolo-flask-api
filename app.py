@@ -11,35 +11,32 @@ from ultralytics import YOLO
 app = Flask(__name__)
 CORS(app)  # Enable CORS
 
-# URL to download the model if not present
+# Google Drive file ID and API Key
+FILE_ID = '11tKJ2cNOPuVX1K4eqSBujYWN0lzt_qJJ'  # Replace with your actual file ID
+API_KEY = 'AIzaSyDvh71mTNaEVVROkDl2RBNDYz2il5Ms5hk'  # Replace with your API key
+MODEL_PATH = 'model/yolo11_model.pt'
+
+# Function to download large files from Google Drive API
 def download_model():
-    MODEL_URL = 'https://drive.google.com/uc?export=download&id=11tKJ2cNOPuVX1K4eqSBujYWN0lzt_qJJ'
-    MODEL_PATH = 'model/yolo11_model.pt'
+    if os.path.exists(MODEL_PATH):
+        print("Model already exists.")
+        return
+
+    print("Downloading YOLOv11 model from Google Drive using API...")
+    os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
     
-    if not os.path.exists(MODEL_PATH):
-        print("Downloading YOLOv11 model...")
-        os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
-
-        session = requests.Session()
-        response = session.get(MODEL_URL, stream=True)
-
-        # Check if a confirmation token is needed
-        for key, value in response.cookies.items():
-            if key.startswith('download_warning'):
-                MODEL_URL_WITH_CONFIRM = f"{MODEL_URL}&confirm={value}"
-                response = session.get(MODEL_URL_WITH_CONFIRM, stream=True)
-                break
-
-        # Check if the content is valid (not HTML)
-        if 'html' in response.headers.get('Content-Type', ''):
-            raise ValueError("Error: The URL is returning an HTML page, not the model file.")
-
-        with open(MODEL_PATH, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
-
-        print("Model downloaded successfully.")
+    URL = f"https://www.googleapis.com/drive/v3/files/{FILE_ID}?alt=media&key={API_KEY}"
+    response = requests.get(URL, stream=True)
+    
+    if response.status_code != 200:
+        raise ValueError(f"Error: Unable to download model. HTTP Status: {response.status_code}")
+    
+    with open(MODEL_PATH, 'wb') as f:
+        for chunk in response.iter_content(chunk_size=8192):
+            if chunk:
+                f.write(chunk)
+    
+    print("Model downloaded successfully.")
 
 # Ensure the model is downloaded before loading
 download_model()
